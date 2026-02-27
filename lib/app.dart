@@ -9,7 +9,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      title: 'Flutter Demo',
+      title: 'Foodoid',
       home: HomePage(),
     );
   }
