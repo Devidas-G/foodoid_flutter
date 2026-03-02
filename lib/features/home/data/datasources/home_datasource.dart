@@ -1,5 +1,5 @@
-import 'package:latlong2/latlong.dart';
+import '../models/user_location.dart';
 
 abstract class HomeRemoteDatasource {
-  Future<LatLng> fetchCurrentLocation();
+  Future<UserLocation> fetchCurrentLocation();
 }

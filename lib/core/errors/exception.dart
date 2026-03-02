@@ -36,3 +36,13 @@ class WishlistException implements Exception {
   @override
   String toString() => 'WishlistException($code): $message';
 }
+
+class CustomException implements Exception {
+  final String message;
+  final String code;
+
+  CustomException(this.message, {this.code = 'unknown'});
+
+  @override
+  String toString() => 'CustomException($code): $message';
+}

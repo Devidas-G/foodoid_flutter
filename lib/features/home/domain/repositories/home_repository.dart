@@ -1,6 +1,6 @@
-import 'package:latlong2/latlong.dart';
 import '../../../../core/utils/typedef.dart';
+import '../entities/user_location_entity.dart';
 
 abstract class HomeRepository {
-  ResultFuture<LatLng> fetchCurrentLocation();
+  ResultFuture<UserLocationEntity> fetchCurrentLocation();
 }

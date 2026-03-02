@@ -7,4 +7,22 @@ sealed class HomeEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class GetCurrentLocationEvent extends HomeEvent {}
+/// Initialize map and request location
+class InitializeMapAndLocationEvent extends HomeEvent {
+  const InitializeMapAndLocationEvent();
+}
+
+/// Request location permission
+class RequestLocationPermissionEvent extends HomeEvent {
+  const RequestLocationPermissionEvent();
+}
+
+/// Fetch current user location
+class GetCurrentLocationEvent extends HomeEvent {
+  const GetCurrentLocationEvent();
+}
+
+/// Retry location fetch
+class RetryLocationEvent extends HomeEvent {
+  const RetryLocationEvent();
+}

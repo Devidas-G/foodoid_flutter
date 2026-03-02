@@ -20,3 +20,11 @@ class ApiFailure extends Failure {
   @override
   List<Object> get props => [message, code];
 }
+
+class LocationFailure extends Failure {
+  const LocationFailure(super.message);
+}
+
+class NetworkFailure extends Failure {
+  const NetworkFailure(super.message);
+}
