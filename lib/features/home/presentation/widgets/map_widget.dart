@@ -14,11 +14,15 @@ class MapWidget extends StatefulWidget {
   /// Callback when map controller is ready
   final Function(MapController)? onMapReady;
 
+  /// Callback when user taps the map
+  final void Function(LatLng)? onMapTap;
+
   const MapWidget({
     super.key,
     this.userLocation,
     required this.defaultLocation,
     this.onMapReady,
+    this.onMapTap,
   });
 
   @override
@@ -69,6 +73,9 @@ class _MapWidgetState extends State<MapWidget> {
         initialZoom: 15,
         onMapReady: () {
           widget.onMapReady?.call(_mapController);
+        },
+        onTap: (tapPosition, point) {
+          widget.onMapTap?.call(point);
         },
       ),
       children: [

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:foodoid/features/giveaway/presentation/pages/giveaway_page.dart';
 
 import '../../domain/entities/user_location_entity.dart';
 import '../bloc/home_bloc.dart';
 import '../widgets/map_widget.dart';
 import '../widgets/round_icon_button.dart';
-
+import '../widgets/home_error_widget.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -102,6 +103,24 @@ class _HomePageState extends State<HomePage> {
                   right: 16,
                   child: _buildErrorWidget(state, context),
                 ),
+
+              /// New Button at bottom center
+              Positioned(
+                bottom: 16,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Navigate to new page (replace NewPage with your actual page widget)
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const GiveawayPage()),
+                      );
+                    },
+                    child: const Text('+ Add Giveaway'),
+                  ),
+                ),
+              ),
             ],
           );
         },
@@ -196,49 +215,6 @@ class _HomePageState extends State<HomePage> {
       errorMessage = state.message;
     }
 
-    return Card(
-      color: Colors.red.shade900,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    errorMessage,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  context.read<HomeBloc>().add(const RetryLocationEvent());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                ),
-                child: const Text(
-                  'Retry',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return HomeErrorWidget(errorMessage: errorMessage);
   }
 }
