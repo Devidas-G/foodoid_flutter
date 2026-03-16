@@ -1,31 +1,17 @@
 import 'package:bloc/bloc.dart';
-import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:stream_transform/stream_transform.dart';
-
+import '../../giveaway_imports.dart';
 import '../../../../core/domain/usecase.dart';
-import '../../domain/entities/user_location_entity.dart';
-import '../../domain/usecases/get_current_location.dart';
-
-part 'home_event.dart';
-part 'home_state.dart';
-
-EventTransformer<E> throttleDroppable<E>(Duration duration) {
-  return (events, mapper) {
-    return droppable<E>().call(events.throttle(duration), mapper);
-  };
-}
-
-const throttleDuration = Duration(milliseconds: 100);
+part 'giveaway_event.dart';
+part 'giveaway_state.dart';
 
 // Default location (Mumbai as example)
 final defaultMumbaiLocation = const LatLng(19.0760, 72.8777);
 
-class HomeBloc extends Bloc<HomeEvent, HomeState> {
+class GiveawayBloc extends Bloc<GiveawayEvent, GiveawayState> {
   final GetCurrentLocation getCurrentLocation;
-
-  HomeBloc({required this.getCurrentLocation}) : super(const HomeInitial()) {
+  GiveawayBloc({required this.getCurrentLocation}) : super(GiveawayInitial()) {
     on<InitializeMapAndLocationEvent>(_onInitializeMapAndLocation);
     on<RequestLocationPermissionEvent>(_onRequestLocationPermission);
     on<GetCurrentLocationEvent>(_onGetCurrentLocation);
@@ -35,14 +21,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// Initialize map and start location request flow
   Future<void> _onInitializeMapAndLocation(
     InitializeMapAndLocationEvent event,
-    Emitter<HomeState> emit,
+    Emitter<GiveawayState> emit,
   ) async {
     emit(const MapLoading());
-    
+
     // Simulate checking map network availability
     // In real scenario, you would check network connectivity here
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     // Map loaded successfully, now wait for location permission
     emit(
       MapLoadedWaitingPermission(
@@ -52,7 +38,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         ),
       ),
     );
-    
+
     // Automatically request location permission
     add(const RequestLocationPermissionEvent());
   }
@@ -60,7 +46,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// Request location permission and fetch location
   Future<void> _onRequestLocationPermission(
     RequestLocationPermissionEvent event,
-    Emitter<HomeState> emit,
+    Emitter<GiveawayState> emit,
   ) async {
     // Request current location
     add(const GetCurrentLocationEvent());
@@ -69,10 +55,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// Fetch current location
   Future<void> _onGetCurrentLocation(
     GetCurrentLocationEvent event,
-    Emitter<HomeState> emit,
+    Emitter<GiveawayState> emit,
   ) async {
     final result = await getCurrentLocation(NoParams());
-    
+
     result.fold(
       (failure) {
         // Handle location failure
@@ -80,7 +66,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           latitude: defaultMumbaiLocation.latitude,
           longitude: defaultMumbaiLocation.longitude,
         );
-        
+
         if (failure.message.contains('Location permission')) {
           emit(
             LocationPermissionDenied(
@@ -114,7 +100,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// Retry location fetch
   Future<void> _onRetryLocation(
     RetryLocationEvent event,
-    Emitter<HomeState> emit,
+    Emitter<GiveawayState> emit,
   ) async {
     emit(const MapLoading());
     add(const GetCurrentLocationEvent());
