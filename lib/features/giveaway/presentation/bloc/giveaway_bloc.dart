@@ -3,6 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
 import '../../giveaway_imports.dart';
 import '../../../../core/domain/usecase.dart';
+import '../../domain/use_cases/submit_giveaway.dart';
+import '../../domain/entities/giveaway_entity.dart';
 part 'giveaway_event.dart';
 part 'giveaway_state.dart';
 
@@ -11,12 +13,15 @@ final defaultMumbaiLocation = const LatLng(19.0760, 72.8777);
 
 class GiveawayBloc extends Bloc<GiveawayEvent, GiveawayState> {
   final GetCurrentLocation getCurrentLocation;
-  GiveawayBloc({required this.getCurrentLocation}) : super(GiveawayInitial()) {
+  final SubmitGiveaway submitGiveaway;
+
+  GiveawayBloc({required this.getCurrentLocation, required this.submitGiveaway}) : super(GiveawayInitial()) {
     on<InitializeMapAndLocationEvent>(_onInitializeMapAndLocation);
     on<RequestLocationPermissionEvent>(_onRequestLocationPermission);
     on<GetCurrentLocationEvent>(_onGetCurrentLocation);
     on<RetryLocationEvent>(_onRetryLocation);
     on<SelectLocationEvent>(_onSelectLocation);
+    on<SubmitGiveawayEvent>(_onSubmitGiveaway);
   }
 
   /// Initialize map and start location request flow
@@ -123,5 +128,17 @@ class GiveawayBloc extends Bloc<GiveawayEvent, GiveawayState> {
     Emitter<GiveawayState> emit,
   ) async {
     emit(LocationLoaded(event.location));
+  }
+
+  Future<void> _onSubmitGiveaway(
+    SubmitGiveawayEvent event,
+    Emitter<GiveawayState> emit,
+  ) async {
+    emit(GiveawaySubmitting());
+    final result = await submitGiveaway.call(event.giveaway);
+    result.fold(
+      (failure) => emit(GiveawaySubmitFailure(failure.message)),
+      (_) => emit(GiveawaySubmitSuccess()),
+    );
   }
 }

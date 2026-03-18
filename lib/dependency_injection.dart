@@ -5,6 +5,7 @@ import 'features/giveaway/data/data_sources/giveaway_datasource.dart';
 import 'features/giveaway/data/repositories_impl/giveaway_repository_implementation.dart';
 import 'features/giveaway/domain/repositories/giveaway_repository.dart';
 import 'features/giveaway/domain/use_cases/get_current_location.dart' as GA;
+import 'features/giveaway/domain/use_cases/submit_giveaway.dart';
 import 'features/giveaway/presentation/bloc/giveaway_bloc.dart';
 import 'features/home/data/datasources/device_datasource.dart';
 import 'features/home/data/datasources/home_datasource.dart';
@@ -33,10 +34,14 @@ Future<void> init() async {
 
   //! Features - Giveaway
   // BLoCs
-  sl.registerFactory<GiveawayBloc>(() => GiveawayBloc(getCurrentLocation: sl()));
+  sl.registerFactory<GiveawayBloc>(() => GiveawayBloc(
+        getCurrentLocation: sl(),
+        submitGiveaway: sl(),
+      ));
 
   // UseCases
   sl.registerLazySingleton<GA.GetCurrentLocation>(()=>GA.GetCurrentLocation(sl()));
+  sl.registerLazySingleton<SubmitGiveaway>(() => SubmitGiveaway(sl()));
 
   // Repositories
   sl.registerLazySingleton<GiveawayRepository>(() => GiveawayRepositoryImplementation(sl()));

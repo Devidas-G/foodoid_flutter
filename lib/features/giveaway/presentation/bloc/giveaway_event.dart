@@ -36,3 +36,13 @@ class SelectLocationEvent extends GiveawayEvent {
   @override
   List<Object> get props => [location];
 }
+
+/// Submit giveaway form
+class SubmitGiveawayEvent extends GiveawayEvent {
+  final GiveawayEntity giveaway;
+
+  const SubmitGiveawayEvent(this.giveaway);
+
+  @override
+  List<Object> get props => [giveaway];
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:foodoid/features/giveaway/presentation/bloc/giveaway_bloc.dart';
+import '../../domain/entities/giveaway_entity.dart';
 import 'package:foodoid/features/giveaway/presentation/widgets/custom_text_form_field.dart';
 import 'package:foodoid/features/giveaway/presentation/widgets/date_time_picker.dart';
 import 'package:foodoid/features/giveaway/presentation/widgets/food_type_dropdown.dart';
@@ -46,6 +47,35 @@ class _GiveawayPageState extends State<GiveawayPage> {
     super.dispose();
   }
 
+  void _handleStateToast(GiveawayState state, BuildContext context) {
+    String? message;
+    if (state is LocationLoaded) {
+      setState(() {
+        _selectedLocation = state.location;
+        _coordinates = [state.location.longitude, state.location.latitude];
+      });
+    } else if (state is GiveawaySubmitting) {
+      message = 'Submitting giveaway...';
+    } else if (state is GiveawaySubmitSuccess) {
+      message = 'Giveaway submitted successfully!';
+      Navigator.pop(context);
+    } else if (state is GiveawaySubmitFailure) {
+      message = 'Submission failed: ${state.message}';
+    }
+
+    if (message != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,15 +91,7 @@ class _GiveawayPageState extends State<GiveawayPage> {
       ),
       body: BlocListener<GiveawayBloc, GiveawayState>(
         listener: (context, state) {
-          if (state is LocationLoaded) {
-            setState(() {
-              _selectedLocation = state.location;
-              _coordinates = [
-                state.location.longitude,
-                state.location.latitude,
-              ];
-            });
-          }
+          _handleStateToast(state, context);
         },
         child: Stack(
           children: [
@@ -229,20 +251,18 @@ class _GiveawayPageState extends State<GiveawayPage> {
                     _endTime != null &&
                     _selectedLocation != null &&
                     _coordinates != null) {
-                  // TODO: Submit the form data
-                  final Map<String, dynamic> formData = {
-                    'title': _titleController.text,
-                    'location': {'type': 'Point', 'coordinates': _coordinates},
-                    'startTime': _startTime!.toUtc().toIso8601String(),
-                    'endTime': _endTime!.toUtc().toIso8601String(),
-                    'foodType': _foodType,
-                    'address': _addressController.text,
-                    'quantityEstimate': int.parse(_quantityController.text),
-                  };
-                  // For example, print or send to API
-                  print(formData);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Form submitted')),
+                  final giveaway = GiveawayEntity(
+                    title: _titleController.text,
+                    coordinates: _coordinates!,
+                    startTime: _startTime!,
+                    endTime: _endTime!,
+                    foodType: _foodType,
+                    address: _addressController.text,
+                    quantityEstimate: int.parse(_quantityController.text),
+                  );
+
+                  context.read<GiveawayBloc>().add(
+                    SubmitGiveawayEvent(giveaway),
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(

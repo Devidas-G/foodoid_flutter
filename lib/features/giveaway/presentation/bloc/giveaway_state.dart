@@ -86,3 +86,19 @@ final class LocationError extends GiveawayState {
   @override
   List<Object?> get props => [message, defaultLocation];
 }
+
+/// Submission in progress
+final class GiveawaySubmitting extends GiveawayState {}
+
+/// Submission success
+final class GiveawaySubmitSuccess extends GiveawayState {}
+
+/// Submission failed
+final class GiveawaySubmitFailure extends GiveawayState {
+  final String message;
+
+  const GiveawaySubmitFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
