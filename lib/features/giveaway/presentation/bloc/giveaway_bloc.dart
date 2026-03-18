@@ -16,6 +16,7 @@ class GiveawayBloc extends Bloc<GiveawayEvent, GiveawayState> {
     on<RequestLocationPermissionEvent>(_onRequestLocationPermission);
     on<GetCurrentLocationEvent>(_onGetCurrentLocation);
     on<RetryLocationEvent>(_onRetryLocation);
+    on<SelectLocationEvent>(_onSelectLocation);
   }
 
   /// Initialize map and start location request flow
@@ -57,6 +58,16 @@ class GiveawayBloc extends Bloc<GiveawayEvent, GiveawayState> {
     GetCurrentLocationEvent event,
     Emitter<GiveawayState> emit,
   ) async {
+    // Emit loading state if not already loading
+    final currentState = state;
+    if (!(currentState is LocationLoading)) {
+      emit(LocationLoading(
+        defaultLocation: currentState is MapLoadedWaitingPermission 
+          ? currentState.defaultLocation 
+          : null,
+      ));
+    }
+    
     final result = await getCurrentLocation(NoParams());
 
     result.fold(
@@ -104,5 +115,13 @@ class GiveawayBloc extends Bloc<GiveawayEvent, GiveawayState> {
   ) async {
     emit(const MapLoading());
     add(const GetCurrentLocationEvent());
+  }
+
+  /// Handle user selecting a location on the map
+  Future<void> _onSelectLocation(
+    SelectLocationEvent event,
+    Emitter<GiveawayState> emit,
+  ) async {
+    emit(LocationLoaded(event.location));
   }
 }

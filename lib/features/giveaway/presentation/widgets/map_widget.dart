@@ -42,8 +42,10 @@ class _MapWidgetState extends State<MapWidget> {
   void didUpdateWidget(MapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // When location is found, animate map to that location
-    if (oldWidget.userLocation == null && widget.userLocation != null) {
+    // When user location changes, animate map to that location
+    if (widget.userLocation != null && 
+        (oldWidget.userLocation == null || 
+         oldWidget.userLocation != widget.userLocation)) {
       _animateToLocation(widget.userLocation!);
     }
   }

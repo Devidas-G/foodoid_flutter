@@ -26,3 +26,13 @@ class GetCurrentLocationEvent extends GiveawayEvent {
 class RetryLocationEvent extends GiveawayEvent {
   const RetryLocationEvent();
 }
+
+/// User selected a location on the map
+class SelectLocationEvent extends GiveawayEvent {
+  final UserLocationEntity location;
+
+  const SelectLocationEvent(this.location);
+
+  @override
+  List<Object> get props => [location];
+}

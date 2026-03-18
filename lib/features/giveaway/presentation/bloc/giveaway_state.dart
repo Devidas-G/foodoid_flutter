@@ -25,6 +25,16 @@ final class MapLoadedWaitingPermission extends GiveawayState {
   List<Object?> get props => [defaultLocation];
 }
 
+/// Location is currently being fetched
+final class LocationLoading extends GiveawayState {
+  final UserLocationEntity? defaultLocation;
+  
+  const LocationLoading({this.defaultLocation});
+  
+  @override
+  List<Object?> get props => [defaultLocation];
+}
+
 /// Location permission granted and location loaded
 final class LocationLoaded extends GiveawayState {
   final UserLocationEntity location;
@@ -75,14 +85,4 @@ final class LocationError extends GiveawayState {
 
   @override
   List<Object?> get props => [message, defaultLocation];
-}
-
-/// Generic home error
-final class HomeError extends GiveawayState {
-  final String message;
-
-  const HomeError(this.message);
-
-  @override
-  List<Object> get props => [message];
 }
