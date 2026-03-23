@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:foodoid/features/giveaway/presentation/pages/giveaway_page.dart';
 
 import '../../domain/entities/user_location_entity.dart';
+import '../../domain/entities/nearby_giveaway_entity.dart';
 import '../bloc/home_bloc.dart';
 import '../widgets/map_widget.dart';
 import '../widgets/round_icon_button.dart';
@@ -176,33 +177,98 @@ class _HomePageState extends State<HomePage> {
       return MapWidget(
         userLocation: state.location,
         defaultLocation: defaultLocation,
+        nearbyGiveaways: state.nearbyGiveaways,
+        onNearbyTap: (giveaway) => _showGiveawaySheet(context, giveaway),
       );
     } else if (state is LocationPermissionDenied) {
       return MapWidget(
         userLocation: null,
         defaultLocation: state.defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
       );
     } else if (state is LocationError) {
       return MapWidget(
         userLocation: null,
         defaultLocation: state.defaultLocation ?? defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
       );
     } else if (state is MapNetworkError) {
       return MapWidget(
         userLocation: state.lastKnownLocation,
         defaultLocation: state.lastKnownLocation ?? defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
       );
     } else if (state is MapLoadedWaitingPermission) {
       return MapWidget(
         userLocation: null,
         defaultLocation: state.defaultLocation ?? defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
       );
     } else {
       return MapWidget(
         userLocation: null,
         defaultLocation: defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
       );
     }
+  }
+
+  void _showGiveawaySheet(BuildContext context, NearbyGiveawayEntity g) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (ctx) {
+        String fmt(DateTime? d) {
+          if (d == null) return '-';
+          final local = d.toLocal();
+          final s = local.toString();
+          return s.substring(0, s.length >= 16 ? 16 : s.length);
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(g.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(children: [
+                if (g.foodType != null) Chip(label: Text(g.foodType!)),
+                const SizedBox(width: 8),
+                Chip(label: Text(g.quantityEstimate.toString())),
+              ]),
+              const SizedBox(height: 8),
+              Text(g.address),
+              const SizedBox(height: 8),
+              Text('Start: ${fmt(g.startTime)}'),
+              Text('End: ${fmt(g.endTime)}'),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   /// Error Card

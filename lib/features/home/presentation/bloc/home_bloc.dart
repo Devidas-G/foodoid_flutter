@@ -7,6 +7,8 @@ import 'package:stream_transform/stream_transform.dart';
 import '../../../../core/domain/usecase.dart';
 import '../../domain/entities/user_location_entity.dart';
 import '../../domain/usecases/get_current_location.dart';
+import '../../domain/usecases/get_nearby_giveaways.dart';
+import '../../domain/entities/nearby_giveaway_entity.dart';
 
 part 'home_event.dart';
 part 'home_state.dart';
@@ -24,11 +26,13 @@ final defaultMumbaiLocation = const LatLng(19.0760, 72.8777);
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetCurrentLocation getCurrentLocation;
+  final GetNearbyGiveaways getNearbyGiveaways;
 
-  HomeBloc({required this.getCurrentLocation}) : super(const HomeInitial()) {
+  HomeBloc({required this.getCurrentLocation, required this.getNearbyGiveaways}) : super(const HomeInitial()) {
     on<InitializeMapAndLocationEvent>(_onInitializeMapAndLocation);
     on<RequestLocationPermissionEvent>(_onRequestLocationPermission);
     on<GetCurrentLocationEvent>(_onGetCurrentLocation);
+    on<GetNearbyGiveawaysEvent>(_onGetNearbyGiveaways, transformer: throttleDroppable(throttleDuration));
     on<RetryLocationEvent>(_onRetryLocation);
   }
 
@@ -104,9 +108,40 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           );
         }
       },
-      (location) {
-        // Location loaded successfully
+      (location) async {
+        // Location loaded successfully; emit location first
         emit(LocationLoaded(location));
+
+        // Dispatch separate event to fetch nearby giveaways (keeps events separate)
+        add(GetNearbyGiveawaysEvent(lat: location.latitude, lng: location.longitude));
+      },
+    );
+  }
+
+  /// Fetch nearby giveaways (separate event)
+  Future<void> _onGetNearbyGiveaways(
+    GetNearbyGiveawaysEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    final result = await getNearbyGiveaways.call(NearbyParams(lat: event.lat, lng: event.lng));
+
+    result.fold(
+      (failure) {
+        print('Failed to fetch nearby giveaways: ${failure.message}');
+        // If failure, optionally emit a network error but keep existing location state
+        final current = state;
+        if (current is LocationLoaded) {
+          emit(MapNetworkError(message: failure.message, lastKnownLocation: current.location));
+          // Re-emit original location without nearby (after short delay) to avoid losing UI state
+          emit(LocationLoaded(current.location));
+        }
+      },
+      (giveaways) {
+        print('Fetched ${giveaways.length} nearby giveaways');
+        final current = state;
+        if (current is LocationLoaded) {
+          emit(LocationLoaded(current.location, nearbyGiveaways: giveaways));
+        }
       },
     );
   }

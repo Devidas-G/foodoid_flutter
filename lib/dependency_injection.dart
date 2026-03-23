@@ -12,6 +12,7 @@ import 'features/home/data/datasources/home_datasource.dart';
 import 'features/home/data/repositories/home_repository_implementation.dart';
 import 'features/home/domain/repositories/home_repository.dart';
 import 'features/home/domain/usecases/get_current_location.dart';
+import 'features/home/domain/usecases/get_nearby_giveaways.dart';
 import 'features/home/presentation/bloc/home_bloc.dart';
 
 final GetIt sl = GetIt.instance;
@@ -21,10 +22,11 @@ Future<void> init() async {
 
   //! Features - Home
   // BLoCs
-  sl.registerFactory<HomeBloc>(() => HomeBloc(getCurrentLocation: sl()));
+  sl.registerFactory<HomeBloc>(() => HomeBloc(getCurrentLocation: sl(), getNearbyGiveaways: sl()));
 
   // UseCases
   sl.registerLazySingleton<GetCurrentLocation>(()=>GetCurrentLocation(sl()));
+  sl.registerLazySingleton<GetNearbyGiveaways>(() => GetNearbyGiveaways(sl()));
 
   // Repositories
   sl.registerLazySingleton<HomeRepository>(() => HomeRepositoryImplementation(sl()));

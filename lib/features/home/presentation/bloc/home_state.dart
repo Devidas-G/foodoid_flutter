@@ -30,11 +30,12 @@ final class MapLoadedWaitingPermission extends HomeState {
 /// Location permission granted and location loaded
 final class LocationLoaded extends HomeState {
   final UserLocationEntity location;
+  final List<NearbyGiveawayEntity> nearbyGiveaways;
 
-  const LocationLoaded(this.location);
+  const LocationLoaded(this.location, {this.nearbyGiveaways = const []});
 
   @override
-  List<Object> get props => [location];
+  List<Object> get props => [location, nearbyGiveaways];
 }
 
 /// Location permission denied - showing default location

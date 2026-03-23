@@ -26,3 +26,14 @@ class GetCurrentLocationEvent extends HomeEvent {
 class RetryLocationEvent extends HomeEvent {
   const RetryLocationEvent();
 }
+
+/// Fetch nearby giveaways for given coordinates
+class GetNearbyGiveawaysEvent extends HomeEvent {
+  final double lat;
+  final double lng;
+
+  const GetNearbyGiveawaysEvent({required this.lat, required this.lng});
+
+  @override
+  List<Object> get props => [lat, lng];
+}

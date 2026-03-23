@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../domain/entities/user_location_entity.dart';
+import '../../domain/entities/nearby_giveaway_entity.dart';
 
 class MapWidget extends StatefulWidget {
   /// User's current location, if null shows default location
@@ -16,6 +17,10 @@ class MapWidget extends StatefulWidget {
 
   /// Callback when user taps the map
   final void Function(LatLng)? onMapTap;
+  /// Callback when a nearby giveaway marker is tapped
+  final void Function(NearbyGiveawayEntity)? onNearbyTap;
+  /// Optional list of nearby giveaways to show as markers
+  final List<NearbyGiveawayEntity>? nearbyGiveaways;
 
   const MapWidget({
     super.key,
@@ -23,6 +28,8 @@ class MapWidget extends StatefulWidget {
     required this.defaultLocation,
     this.onMapReady,
     this.onMapTap,
+    this.onNearbyTap,
+    this.nearbyGiveaways,
   });
 
   @override
@@ -66,6 +73,62 @@ class _MapWidgetState extends State<MapWidget> {
     final center =
         LatLng(displayLocation.latitude, displayLocation.longitude);
 
+    final List<Marker> markers = [];
+
+    // user / center marker
+    markers.add(Marker(
+      point: center,
+      width: 40,
+      height: 40,
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: widget.userLocation != null ? Colors.blue : Colors.grey,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(6),
+            child: Icon(
+              Icons.my_location,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+        ],
+      ),
+    ));
+
+    // Add nearby giveaway markers if provided
+    if (widget.nearbyGiveaways != null) {
+      for (final g in widget.nearbyGiveaways!) {
+        if (g.coordinates.length >= 2) {
+          final lat = g.coordinates[0];
+          final lng = g.coordinates[1];
+          markers.add(Marker(
+            point: LatLng(lat, lng),
+            width: 36,
+            height: 36,
+            child: GestureDetector(
+              onTap: () {
+                widget.onNearbyTap?.call(g);
+              },
+              child: Column(
+                children: [
+                  Icon(Icons.restaurant, color: Colors.redAccent, size: 22),
+                ],
+              ),
+            ),
+          ));
+        }
+      }
+    }
+
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
@@ -85,42 +148,8 @@ class _MapWidgetState extends State<MapWidget> {
           subdomains: const ['a', 'b', 'c', 'd'],
           userAgentPackageName: 'com.example.foodoid',
         ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: center,
-              width: 40,
-              height: 40,
-              child: Column(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: widget.userLocation != null
-                          ? Colors.blue
-                          : Colors.grey,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(6),
-                    child: Icon(
-                      widget.userLocation != null
-                          ? Icons.my_location
-                          : Icons.location_off,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        MarkerLayer(markers: markers),
           ],
-        ),
-      ],
-    );
+        );
   }
 }
