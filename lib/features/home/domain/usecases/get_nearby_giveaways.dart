@@ -6,8 +6,10 @@ import '../repositories/home_repository.dart';
 class NearbyParams {
   final double lat;
   final double lng;
+  final List<String>? status;
+  final List<String>? foodType;
 
-  NearbyParams({required this.lat, required this.lng});
+  NearbyParams({required this.lat, required this.lng, this.status, this.foodType});
 }
 
 class GetNearbyGiveaways implements UseCase<List<NearbyGiveawayEntity>, NearbyParams> {
@@ -17,6 +19,6 @@ class GetNearbyGiveaways implements UseCase<List<NearbyGiveawayEntity>, NearbyPa
 
   @override
   ResultFuture<List<NearbyGiveawayEntity>> call(NearbyParams params) async {
-    return await repository.getNearbyGiveaways(params.lat, params.lng);
+    return await repository.getNearbyGiveaways(params.lat, params.lng, status: params.status, foodType: params.foodType);
   }
 }

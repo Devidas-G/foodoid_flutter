@@ -34,9 +34,14 @@ class HomeRepositoryImplementation extends HomeRepository {
   }
 
   @override
-  ResultFuture<List<NearbyGiveawayEntity>> getNearbyGiveaways(double lat, double lng) async {
+  ResultFuture<List<NearbyGiveawayEntity>> getNearbyGiveaways(
+    double lat,
+    double lng, {
+    List<String>? status,
+    List<String>? foodType,
+  }) async {
     try {
-      final models = await remoteDatasource.fetchNearbyGiveaways(lat, lng);
+      final models = await remoteDatasource.fetchNearbyGiveaways(lat, lng, status: status, foodType: foodType);
       final entities = models.map((m) => m.toEntity()).toList();
       return Right(entities);
     } on CustomException catch (e) {

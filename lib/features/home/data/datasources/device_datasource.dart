@@ -45,24 +45,41 @@ class DeviceDatasource implements HomeRemoteDatasource {
   }
 
   @override
-  Future<List<NearbyGiveawayModel>> fetchNearbyGiveaways(double lat, double lng) async {
+  Future<List<NearbyGiveawayModel>> fetchNearbyGiveaways(
+    double lat,
+    double lng, {
+    List<String>? status,
+    List<String>? foodType,
+  }) async {
     try {
       final path = 'api/private/foodoid/nearby?lat=$lat&lng=$lng';
-      final response = await ApiClient.instance.get(path);
+
+      final body = {
+        'filters': {
+          'status': ?status,
+          'foodType': ?foodType,
+        }
+      };
+
+      // If no filters provided, send empty body to be safe
+      final response = await ApiClient.instance.post(path, body: body);
+      print(response.statusCode);
+      print(response.body);
+
 
       if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        print(response.body);
-        if (body is List) {
-          return body
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return decoded
               .map<NearbyGiveawayModel>((e) => NearbyGiveawayModel.fromJson(Map<String, dynamic>.from(e)))
               .toList();
-        } else if (body is Map && body['data'] is List) {
-          return (body['data'] as List)
+        } else if (decoded is Map && decoded['data'] is List) {
+          return (decoded['data'] as List)
               .map<NearbyGiveawayModel>((e) => NearbyGiveawayModel.fromJson(Map<String, dynamic>.from(e)))
               .toList();
         } else {
-          throw CustomException('Unexpected response format from nearby API');
+          // API returned empty list or unexpected shape
+          return <NearbyGiveawayModel>[];
         }
       } else {
         throw CustomException('Network error: ${response.statusCode}');

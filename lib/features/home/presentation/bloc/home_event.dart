@@ -4,7 +4,7 @@ sealed class HomeEvent extends Equatable {
   const HomeEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 /// Initialize map and request location
@@ -31,9 +31,11 @@ class RetryLocationEvent extends HomeEvent {
 class GetNearbyGiveawaysEvent extends HomeEvent {
   final double lat;
   final double lng;
+  final List<String>? status;
+  final List<String>? foodType;
 
-  const GetNearbyGiveawaysEvent({required this.lat, required this.lng});
+  const GetNearbyGiveawaysEvent({required this.lat, required this.lng, this.status, this.foodType});
 
   @override
-  List<Object> get props => [lat, lng];
+  List<Object?> get props => [lat, lng, status, foodType];
 }

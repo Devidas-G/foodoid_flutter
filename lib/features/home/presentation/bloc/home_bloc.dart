@@ -27,6 +27,12 @@ final defaultMumbaiLocation = const LatLng(19.0760, 72.8777);
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetCurrentLocation getCurrentLocation;
   final GetNearbyGiveaways getNearbyGiveaways;
+  // remember last applied filters
+  List<String>? _lastStatusFilters;
+  List<String>? _lastFoodFilters;
+
+  List<String>? get lastStatusFilters => _lastStatusFilters;
+  List<String>? get lastFoodFilters => _lastFoodFilters;
 
   HomeBloc({required this.getCurrentLocation, required this.getNearbyGiveaways}) : super(const HomeInitial()) {
     on<InitializeMapAndLocationEvent>(_onInitializeMapAndLocation);
@@ -113,7 +119,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         emit(LocationLoaded(location));
 
         // Dispatch separate event to fetch nearby giveaways (keeps events separate)
-        add(GetNearbyGiveawaysEvent(lat: location.latitude, lng: location.longitude));
+        // include last applied filters if any
+        add(GetNearbyGiveawaysEvent(
+          lat: location.latitude,
+          lng: location.longitude,
+          status: _lastStatusFilters,
+          foodType: _lastFoodFilters,
+        ));
       },
     );
   }
@@ -123,7 +135,16 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     GetNearbyGiveawaysEvent event,
     Emitter<HomeState> emit,
   ) async {
-    final result = await getNearbyGiveaways.call(NearbyParams(lat: event.lat, lng: event.lng));
+    // remember filters
+    _lastStatusFilters = event.status;
+    _lastFoodFilters = event.foodType;
+
+    final result = await getNearbyGiveaways.call(NearbyParams(
+      lat: event.lat,
+      lng: event.lng,
+      status: event.status,
+      foodType: event.foodType,
+    ));
 
     result.fold(
       (failure) {
