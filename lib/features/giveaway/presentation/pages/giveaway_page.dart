@@ -60,7 +60,7 @@ class _GiveawayPageState extends State<GiveawayPage> {
       message = 'Giveaway submitted successfully!';
       Navigator.pop(context);
     } else if (state is GiveawaySubmitFailure) {
-      message = 'Submission failed: ${state.message}';
+      message = state.message;
     }
 
     if (message != null) {

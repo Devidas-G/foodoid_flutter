@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:foodoid/core/errors/exception.dart';
+import 'package:foodoid/core/api/api.dart';
 import '../models/user_location.dart';
 import 'giveaway_datasource.dart';
 import '../models/giveaway_model.dart';
@@ -47,20 +47,13 @@ class DeviceDatasource implements GiveawayRemoteDatasource {
   @override
   Future<void> submitGiveaway(GiveawayModel giveaway) async {
     try {
-      // Example URL - replace with real endpoint later
-      final uri = Uri.parse('https://example.com/api/giveaways');
-      final headers = {'Content-Type': 'application/json'};
-      final body = json.encode(giveaway.toJson());
-
-      final response = await http.post(uri, headers: headers, body: body).timeout(
-        const Duration(seconds: 10),
-      );
+      // Use ApiClient with baseUrl and configured headers (including api-key)
+      final response = await ApiClient.instance
+          .post('api/private/foodoid/create', body: giveaway.toJson());
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        // Try to parse response body for explicit success/message fields.
         try {
           final Map<String, dynamic> jsonBody = json.decode(response.body);
-          // If API returns explicit success flag, respect it.
           if (jsonBody.containsKey('success')) {
             final successFlag = jsonBody['success'];
             if (successFlag is bool && !successFlag) {
@@ -68,10 +61,8 @@ class DeviceDatasource implements GiveawayRemoteDatasource {
               throw CustomException('Failed to submit giveaway: $msg');
             }
           }
-          // Otherwise assume 2xx means success.
           return;
         } catch (e) {
-          // If response is not JSON or parsing failed, assume success for 2xx.
           return;
         }
       } else {

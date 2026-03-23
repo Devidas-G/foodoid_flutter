@@ -1,6 +1,10 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiConfig {
-  // Base URL used throughout the app. Ensure trailing slash for path joining.
-  static const String baseUrl = 'https://stone-of-righteousness.vercel.app/';
+  // Base URL used throughout the app. Prefer loading from dotenv at runtime.
+  // Example .env: API_BASE_URL=https://stone-of-righteousness.vercel.app/
+  static String get baseUrl => dotenv.env['API_BASE_URL'] ??
+      'https://stone-of-righteousness.vercel.com/';
 
   // API key required by the backend. Set at app startup from secure storage
   // or environment. Keep empty by default.
