@@ -21,7 +21,7 @@ class DateTimePicker extends StatelessWidget {
           child: Text(
             selectedDateTime == null
                 ? '$label: Not selected'
-                : '$label: ${DateFormat('yyyy-MM-dd HH:mm').format(selectedDateTime!)}',
+                : '$label: ${DateFormat('d MMMM yyyy, hh:mm a').format(selectedDateTime!)}',
           ),
         ),
         ElevatedButton(

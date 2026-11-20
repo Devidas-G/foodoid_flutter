@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:foodoid/features/giveaway/presentation/pages/giveaway_page.dart';
+import 'package:intl/intl.dart';
 
 import '../../domain/entities/user_location_entity.dart';
 import '../../domain/entities/nearby_giveaway_entity.dart';
@@ -41,7 +42,7 @@ class _HomePageState extends State<HomePage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: RoundIconButton(icon: Icons.account_circle, onPressed: () {}),
+        // title: RoundIconButton(icon: Icons.account_circle, onPressed: () {}),
         actions: [
           RoundIconButton(
             icon: Icons.filter_list,
@@ -79,35 +80,35 @@ class _HomePageState extends State<HomePage> {
                   right: 16,
                   child: _buildErrorWidget(state, context),
                 ),
-
-              /// New Button at bottom center
-              Positioned(
-                bottom: 16,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to new page (replace NewPage with your actual page widget)
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const GiveawayPage()),
-                      );
-                    },
-                    child: const Text('+ Add Giveaway'),
-                  ),
-                ),
-              ),
             ],
           );
         },
       ),
 
-      floatingActionButton: FloatingActionButton(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-        onPressed: () {
-          context.read<HomeBloc>().add(const RetryLocationEvent());
-        },
-        child: const Icon(Icons.location_searching),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          RoundIconButton(
+            onPressed: () {
+              // Navigate to new page (replace NewPage with your actual page widget)
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const GiveawayPage()));
+            },
+            icon: Icons.add,
+          ),
+          SizedBox(height: 8),
+          FloatingActionButton(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(50),
+            ),
+            onPressed: () {
+              context.read<HomeBloc>().add(const RetryLocationEvent());
+            },
+            child: const Icon(Icons.location_searching),
+          ),
+        ],
       ),
     );
   }
@@ -194,6 +195,7 @@ class _HomePageState extends State<HomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
@@ -216,34 +218,35 @@ class _HomePageState extends State<HomePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                g.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      g.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  if(g.foodType != null)
+                    Chip(label: Text(g.foodType!)),
+                ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  if (g.foodType != null) Chip(label: Text(g.foodType!)),
-                  const SizedBox(width: 8),
-                  Chip(label: Text(g.quantityEstimate.toString())),
+                  Icon(Icons.people),
+                  SizedBox(width: 4),
+                  Text('Estimated quantity: ${g.quantityEstimate.toString()}'),
                 ],
               ),
               const SizedBox(height: 8),
-              Text(g.address),
+              Text('Start: ${DateFormat('d MMMM yyyy, hh:mm a').format(g.startTime)}'),
+              Text('End: ${DateFormat('d MMMM yyyy, hh:mm a').format(g.endTime)}'),
               const SizedBox(height: 8),
-              Text('Start: ${fmt(g.startTime)}'),
-              Text('End: ${fmt(g.endTime)}'),
+              Text(g.address),
               const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Close'),
-                ),
-              ),
             ],
           ),
         );
@@ -256,12 +259,14 @@ class _HomePageState extends State<HomePage> {
     final currentState = bloc.state;
 
     // initial selections (restore last applied filters from bloc if available)
-    String? selectedStatus = (bloc.lastStatusFilters != null && bloc.lastStatusFilters!.isNotEmpty)
-      ? bloc.lastStatusFilters!.first
-      : null;
-    String? selectedFood = (bloc.lastFoodFilters != null && bloc.lastFoodFilters!.isNotEmpty)
-      ? bloc.lastFoodFilters!.first
-      : null;
+    String? selectedStatus =
+        (bloc.lastStatusFilters != null && bloc.lastStatusFilters!.isNotEmpty)
+        ? bloc.lastStatusFilters!.first
+        : null;
+    String? selectedFood =
+        (bloc.lastFoodFilters != null && bloc.lastFoodFilters!.isNotEmpty)
+        ? bloc.lastFoodFilters!.first
+        : null;
 
     showModalBottomSheet(
       context: context,
@@ -269,7 +274,7 @@ class _HomePageState extends State<HomePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
-        builder: (ctx) {
+      builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx2, setState) {
             return Padding(
@@ -368,8 +373,12 @@ class _HomePageState extends State<HomePage> {
                             GetNearbyGiveawaysEvent(
                               lat: lat,
                               lng: lng,
-                              status: selectedStatus == null ? null : [selectedStatus!],
-                              foodType: selectedFood == null ? null : [selectedFood!],
+                              status: selectedStatus == null
+                                  ? null
+                                  : [selectedStatus!],
+                              foodType: selectedFood == null
+                                  ? null
+                                  : [selectedFood!],
                             ),
                           );
                           Navigator.of(ctx).pop();

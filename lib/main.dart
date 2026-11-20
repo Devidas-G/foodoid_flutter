@@ -25,3 +25,4 @@ void main() async {
 
 //! For build release
   //flutter build apk --dart-define=ENV_FILE=.env/.env.prod
+  //flutter build appbundle --dart-define=ENV_FILE=.env/.env.prod
