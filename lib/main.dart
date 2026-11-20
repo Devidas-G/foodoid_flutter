@@ -1,54 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:foodoid/app.dart';
+import 'core/api/api.dart';
+import 'core/engine/engine_initializer.dart';
 import 'dependency_injection.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  const envFile = String.fromEnvironment(
+    "ENV_FILE",
+    defaultValue: ".env/.env.dev",
+  );
+  await dotenv.load(fileName: envFile);
+  ApiConfig.apiKey = dotenv.get('API_KEY');
   await di.init();
+  EngineInitializer.init();
   runApp(const MyApp());
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+//! For local development
+  // flutter run --dart-define=ENV_FILE=.env/.env.dev
+  // flutter run --dart-define=ENV_FILE=.env/.env.staging
+  // flutter run --dart-define=ENV_FILE=.env/.env.prod
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
+//! For build release
+  //flutter build apk --dart-define=ENV_FILE=.env/.env.prod
+  //flutter build appbundle --dart-define=ENV_FILE=.env/.env.prod

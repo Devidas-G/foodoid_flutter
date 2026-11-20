@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:foodoid/features/giveaway/presentation/pages/giveaway_page.dart';
+import 'package:intl/intl.dart';
+
+import '../../domain/entities/user_location_entity.dart';
+import '../../domain/entities/nearby_giveaway_entity.dart';
+import '../bloc/home_bloc.dart';
 import '../widgets/map_widget.dart';
+import '../widgets/round_icon_button.dart';
+import '../widgets/home_error_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,21 +19,393 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   @override
+  void initState() {
+    super.initState();
+
+    /// Initialize map and location on page load
+    Future.microtask(() {
+      if (mounted) {
+        context.read<HomeBloc>().add(const InitializeMapAndLocationEvent());
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        MapWidget(),
-        AppBar(
-          title: const Text('Foodoid'),
-          backgroundColor: Colors.transparent,
-          leading: IconButton(
-            icon: const Icon(Icons.menu,),
-            onPressed: () {
-              // Handle menu button press
-            },
-          ),
-        ),
-      ],
+    /// Default location for Mumbai
+    const defaultLocation = UserLocationEntity(
+      latitude: 19.0760,
+      longitude: 72.8777,
     );
+
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        // title: RoundIconButton(icon: Icons.account_circle, onPressed: () {}),
+        actions: [
+          RoundIconButton(
+            icon: Icons.filter_list,
+            onPressed: () => _showFilterSheet(context),
+          ),
+        ],
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 10),
+      ),
+
+      /// 🔥 Using BlocConsumer for UI + Side Effects
+      body: BlocConsumer<HomeBloc, HomeState>(
+        listener: (context, state) {
+          _handleStateToast(state, context);
+        },
+        builder: (context, state) {
+          return Stack(
+            children: [
+              /// Map Widget
+              _buildMapWidget(state, defaultLocation),
+
+              /// Loading Overlay
+              if (state is MapLoading)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+
+              /// Error Overlay
+              if (state is LocationError || state is MapNetworkError)
+                Positioned(
+                  bottom: MediaQuery.of(context).padding.bottom + 80,
+                  left: 16,
+                  right: 16,
+                  child: _buildErrorWidget(state, context),
+                ),
+            ],
+          );
+        },
+      ),
+
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          RoundIconButton(
+            onPressed: () {
+              // Navigate to new page (replace NewPage with your actual page widget)
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const GiveawayPage()));
+            },
+            icon: Icons.add,
+          ),
+          SizedBox(height: 8),
+          FloatingActionButton(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(50),
+            ),
+            onPressed: () {
+              context.read<HomeBloc>().add(const RetryLocationEvent());
+            },
+            child: const Icon(Icons.location_searching),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🔥 Toast Handler (Side Effect)
+  void _handleStateToast(HomeState state, BuildContext context) {
+    String? message;
+
+    if (state is MapLoading) {
+      message = 'Loading map...';
+    } else if (state is MapLoadedWaitingPermission) {
+      message = 'Requesting location permission...';
+    } else if (state is LocationLoaded) {
+      message = 'Location found!';
+    } else if (state is LocationPermissionDenied) {
+      message = state.message;
+    } else if (state is LocationError) {
+      message = state.message;
+    } else if (state is MapNetworkError) {
+      message = state.message;
+    }
+
+    if (message != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+    }
+  }
+
+  /// Map builder based on state
+  Widget _buildMapWidget(HomeState state, UserLocationEntity defaultLocation) {
+    if (state is LocationLoaded) {
+      return MapWidget(
+        userLocation: state.location,
+        defaultLocation: defaultLocation,
+        nearbyGiveaways: state.nearbyGiveaways,
+        onNearbyTap: (giveaway) => _showGiveawaySheet(context, giveaway),
+      );
+    } else if (state is LocationPermissionDenied) {
+      return MapWidget(
+        userLocation: null,
+        defaultLocation: state.defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
+      );
+    } else if (state is LocationError) {
+      return MapWidget(
+        userLocation: null,
+        defaultLocation: state.defaultLocation ?? defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
+      );
+    } else if (state is MapNetworkError) {
+      return MapWidget(
+        userLocation: state.lastKnownLocation,
+        defaultLocation: state.lastKnownLocation ?? defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
+      );
+    } else if (state is MapLoadedWaitingPermission) {
+      return MapWidget(
+        userLocation: null,
+        defaultLocation: state.defaultLocation ?? defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
+      );
+    } else {
+      return MapWidget(
+        userLocation: null,
+        defaultLocation: defaultLocation,
+        nearbyGiveaways: null,
+        onNearbyTap: null,
+      );
+    }
+  }
+
+  void _showGiveawaySheet(BuildContext context, NearbyGiveawayEntity g) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (ctx) {
+        String fmt(DateTime? d) {
+          if (d == null) return '-';
+          final local = d.toLocal();
+          final s = local.toString();
+          return s.substring(0, s.length >= 16 ? 16 : s.length);
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      g.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  if(g.foodType != null)
+                    Chip(label: Text(g.foodType!)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.people),
+                  SizedBox(width: 4),
+                  Text('Estimated quantity: ${g.quantityEstimate.toString()}'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('Start: ${DateFormat('d MMMM yyyy, hh:mm a').format(g.startTime)}'),
+              Text('End: ${DateFormat('d MMMM yyyy, hh:mm a').format(g.endTime)}'),
+              const SizedBox(height: 8),
+              Text(g.address),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFilterSheet(BuildContext context) {
+    final bloc = context.read<HomeBloc>();
+    final currentState = bloc.state;
+
+    // initial selections (restore last applied filters from bloc if available)
+    String? selectedStatus =
+        (bloc.lastStatusFilters != null && bloc.lastStatusFilters!.isNotEmpty)
+        ? bloc.lastStatusFilters!.first
+        : null;
+    String? selectedFood =
+        (bloc.lastFoodFilters != null && bloc.lastFoodFilters!.isNotEmpty)
+        ? bloc.lastFoodFilters!.first
+        : null;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx2, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Filters',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedStatus,
+                    decoration: const InputDecoration(labelText: 'Status'),
+                    items: ['closed', 'scheduled', 'active', 'expired']
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
+                    onChanged: (v) => setState(() => selectedStatus = v),
+                    isExpanded: true,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedFood,
+                    decoration: const InputDecoration(labelText: 'Food Type'),
+                    items: ['veg', 'non-veg', 'both']
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
+                    onChanged: (v) => setState(() => selectedFood = v),
+                    isExpanded: true,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          // Clear selections
+                          setState(() {
+                            selectedStatus = null;
+                            selectedFood = null;
+                          });
+                          // Trigger fetch with no filters (clear)
+                          // Determine a sensible location
+                          double lat = 0, lng = 0;
+                          if (currentState is LocationLoaded) {
+                            lat = currentState.location.latitude;
+                            lng = currentState.location.longitude;
+                          } else if (currentState is MapNetworkError &&
+                              currentState.lastKnownLocation != null) {
+                            lat = currentState.lastKnownLocation!.latitude;
+                            lng = currentState.lastKnownLocation!.longitude;
+                          } else if (currentState
+                                  is MapLoadedWaitingPermission &&
+                              currentState.defaultLocation != null) {
+                            lat = currentState.defaultLocation!.latitude;
+                            lng = currentState.defaultLocation!.longitude;
+                          }
+                          bloc.add(
+                            GetNearbyGiveawaysEvent(
+                              lat: lat,
+                              lng: lng,
+                              status: null,
+                              foodType: null,
+                            ),
+                          );
+                          Navigator.of(ctx).pop();
+                        },
+                        child: const Text('Clear'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Apply filters (convert single selections to lists expected by bloc)
+                          double lat = 0, lng = 0;
+                          if (currentState is LocationLoaded) {
+                            lat = currentState.location.latitude;
+                            lng = currentState.location.longitude;
+                          } else if (currentState is MapNetworkError &&
+                              currentState.lastKnownLocation != null) {
+                            lat = currentState.lastKnownLocation!.latitude;
+                            lng = currentState.lastKnownLocation!.longitude;
+                          } else if (currentState
+                                  is MapLoadedWaitingPermission &&
+                              currentState.defaultLocation != null) {
+                            lat = currentState.defaultLocation!.latitude;
+                            lng = currentState.defaultLocation!.longitude;
+                          }
+                          bloc.add(
+                            GetNearbyGiveawaysEvent(
+                              lat: lat,
+                              lng: lng,
+                              status: selectedStatus == null
+                                  ? null
+                                  : [selectedStatus!],
+                              foodType: selectedFood == null
+                                  ? null
+                                  : [selectedFood!],
+                            ),
+                          );
+                          Navigator.of(ctx).pop();
+                        },
+                        child: const Text('Apply'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Error Card
+  Widget _buildErrorWidget(HomeState state, BuildContext context) {
+    String errorMessage = '';
+
+    if (state is LocationError) {
+      errorMessage = state.message;
+    } else if (state is MapNetworkError) {
+      errorMessage = state.message;
+    }
+
+    return HomeErrorWidget(errorMessage: errorMessage);
   }
 }
